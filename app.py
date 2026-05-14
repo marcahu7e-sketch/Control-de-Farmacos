@@ -10,7 +10,106 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+# Actualizar base de datos (ejecuta solo una vez)
+import os
+import sys
 
+
+def upgrade_database():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Verificar si falta la columna categoria
+    cursor.execute("PRAGMA table_info(medicamentos)")
+    columnas = [col[1] for col in cursor.fetchall()]
+
+    if 'categoria' not in columnas:
+        cursor.execute("ALTER TABLE medicamentos ADD COLUMN categoria TEXT DEFAULT 'farmaco'")
+        print("✅ Columna 'categoria' agregada")
+
+    # Crear tabla de lotes si no existe
+    cursor.execute('''
+                   CREATE TABLE IF NOT EXISTS lotes
+                   (
+                       id
+                       INTEGER
+                       PRIMARY
+                       KEY
+                       AUTOINCREMENT,
+                       medicamento_id
+                       INTEGER,
+                       numero_lote
+                       TEXT,
+                       fecha_vencimiento
+                       DATE,
+                       cantidad
+                       INTEGER,
+                       cantidad_restante
+                       INTEGER,
+                       fecha_ingreso
+                       TIMESTAMP
+                       DEFAULT
+                       CURRENT_TIMESTAMP,
+                       FOREIGN
+                       KEY
+                   (
+                       medicamento_id
+                   ) REFERENCES medicamentos
+                   (
+                       id
+                   )
+                       )
+                   ''')
+
+    # Crear tabla de carro de paro si no existe
+    cursor.execute('''
+                   CREATE TABLE IF NOT EXISTS carro_paro
+                   (
+                       id
+                       INTEGER
+                       PRIMARY
+                       KEY
+                       AUTOINCREMENT,
+                       medicamento_id
+                       INTEGER,
+                       cantidad
+                       INTEGER
+                       DEFAULT
+                       0,
+                       cantidad_minima
+                       INTEGER
+                       DEFAULT
+                       5,
+                       ultima_revision
+                       DATE,
+                       FOREIGN
+                       KEY
+                   (
+                       medicamento_id
+                   ) REFERENCES medicamentos
+                   (
+                       id
+                   )
+                       )
+                   ''')
+
+    # Agregar columna tipo a movimientos si no existe
+    cursor.execute("PRAGMA table_info(movimientos)")
+    col_mov = [col[1] for col in cursor.fetchall()]
+    if 'tipo' not in col_mov:
+        cursor.execute("ALTER TABLE movimientos ADD COLUMN tipo TEXT DEFAULT 'ingreso'")
+
+    conn.commit()
+    conn.close()
+
+
+# Ejecutar upgrade al iniciar
+if os.path.exists(DB_NAME):
+    upgrade_database()
+else:
+    # Si es primera vez, inicializar normalmente
+    init_db()
+    upgrade_database()
 # ============ CONFIGURACIÓN ============
 st.set_page_config(
     page_title="Sistema Hospitalario",
