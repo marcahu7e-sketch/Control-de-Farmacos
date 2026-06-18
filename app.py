@@ -664,6 +664,7 @@ def main():
         "🚑 Carro de Paro",
         "📦 Lotes y Vencimientos",
         "📈 Reportes",
+        "📥 Cargar lista predeterminada",
         "🔐 Cambiar Contraseña"
     ]
 
