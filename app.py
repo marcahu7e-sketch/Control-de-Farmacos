@@ -720,250 +720,270 @@ def main():
 
     # Menú principal
     menu_options = [
+        "📊 Dashboard",
+        "💊 Gestión de Medicamentos",
+        "📥 Ingreso con Lote",
+        "📤 Egreso",
+        "🚑 Carro de Paro",
+        "📦 Lotes y Vencimientos",
+        "📈 Reportes",
+        "📥 Cargar lista predeterminada",
+        "🔐 Cambiar Contraseña"
+    ]
+
+    if verificar_permiso('admin'):
+        menu_options.append("👥 Gestión de Usuarios")
+
+    menu = st.sidebar.radio("📋 Menú", menu_options)
+
+    # ============ DASHBOARD ============
     if menu == "📊 Dashboard":
         st.header("📊 Dashboard")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        fig = grafico_stock_por_categoria()
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No hay datos para mostrar")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig = grafico_stock_por_categoria()
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No hay datos para mostrar")
 
-    with col2:
-        if
-    not stock_bajo.empty:
-    st.subheader("⚠️ Medicamentos con Stock Bajo")
-    st.dataframe(stock_bajo, use_container_width=True)
+        with col2:
+            if not stock_bajo.empty:
+                st.subheader("⚠️ Medicamentos con Stock Bajo")
+                st.dataframe(stock_bajo, use_container_width=True)
 
-    if not lotes_vencer.empty:
-        st.subheader("📦 Lotes Próximos a Vencer")
-    st.dataframe(lotes_vencer, use_container_width=True)
+        if not lotes_vencer.empty:
+            st.subheader("📦 Lotes Próximos a Vencer")
+            st.dataframe(lotes_vencer, use_container_width=True)
 
+    # ============ GESTIÓN DE MEDICAMENTOS ============
     elif menu == "💊 Gestión de Medicamentos":
-    st.header("💊 Gestión de Medicamentos")
+        st.header("💊 Gestión de Medicamentos")
 
-    tab1, tab2 = st.tabs(["➕ Agregar Medicamento", "📋 Listado"])
+        tab1, tab2 = st.tabs(["➕ Agregar Medicamento", "📋 Listado"])
 
-    with tab1:
-        with
-    st.form("nuevo_medicamento"):
-    col1, col2 = st.columns(2)
-    with col1:
-        nombre = st.text_input("Nombre del medicamento *")
-    categoria = st.selectbox("Categoría", ["farmaco", "psicofarmaco"],
-                             format_func=lambda x: "💊 Fármaco" if x == "farmaco" else "🧠 Psicofármaco")
-    with col2:
-        stock_inicial = st.number_input("Stock inicial", min_value=0, value=0)
-    stock_minimo = st.number_input("Stock mínimo de alerta", min_value=0, value=10)
+        with tab1:
+            with st.form("nuevo_medicamento"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    nombre = st.text_input("Nombre del medicamento *")
+                    categoria = st.selectbox("Categoría", ["farmaco", "psicofarmaco"],
+                                             format_func=lambda x: "💊 Fármaco" if x == "farmaco" else "🧠 Psicofármaco")
+                with col2:
+                    stock_inicial = st.number_input("Stock inicial", min_value=0, value=0)
+                    stock_minimo = st.number_input("Stock mínimo de alerta", min_value=0, value=10)
 
-    if st.form_submit_button("💾 Guardar Medicamento"):
-        if
-    nombre:
-    if agregar_medicamento(nombre, categoria, stock_inicial, stock_minimo):
-        st.success(f"✅ Medicamento '{nombre}' agregado correctamente")
-    st.balloons()
-    st.rerun()
-    else:
-    st.error("❌ Ya existe un medicamento con ese nombre")
-    else:
-    st.warning("Ingrese un nombre")
+                if st.form_submit_button("💾 Guardar Medicamento"):
+                    if nombre:
+                        if agregar_medicamento(nombre, categoria, stock_inicial, stock_minimo):
+                            st.success(f"✅ Medicamento '{nombre}' agregado correctamente")
+                            st.balloons()
+                            st.rerun()
+                        else:
+                            st.error("❌ Ya existe un medicamento con ese nombre")
+                    else:
+                        st.warning("Ingrese un nombre")
 
-    with tab2:
-        if
-    medicamentos.empty:
-    st.info("No hay medicamentos cargados")
-    else:
-    st.dataframe(medicamentos, use_container_width=True)
-    csv = medicamentos.to_csv(index=False)
-    st.download_button("📥 Descargar CSV", csv, "medicamentos.csv")
+        with tab2:
+            if medicamentos.empty:
+                st.info("No hay medicamentos cargados")
+            else:
+                st.dataframe(medicamentos, use_container_width=True)
+                csv = medicamentos.to_csv(index=False)
+                st.download_button("📥 Descargar CSV", csv, "medicamentos.csv")
 
+    # ============ INGRESO CON LOTE ============
     elif menu == "📥 Ingreso con Lote":
-    st.header("📥 Registrar Ingreso con Número de Lote")
+        st.header("📥 Registrar Ingreso con Número de Lote")
 
-    if medicamentos.empty:
-        st.warning("Primero debe agregar medicamentos")
-    else:
-        with
-    st.form("ingreso_lote"):
-    col1, col2 = st.columns(2)
-    with col1:
-        med = st.selectbox("Medicamento", medicamentos['nombre'].tolist())
-    med_id = medicamentos[medicamentos['nombre'] == med]['id'].values[0]
-    numero_lote = st.text_input("Número de Lote *")
-    fecha_vencimiento = st.date_input("Fecha de Vencimiento", min_value=datetime.now())
-    with col2:
-        cantidad = st.number_input("Cantidad", min_value=1, step=1)
-    motivo = st.text_area("Motivo del Ingreso")
+        if medicamentos.empty:
+            st.warning("Primero debe agregar medicamentos")
+        else:
+            with st.form("ingreso_lote"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    med = st.selectbox("Medicamento", medicamentos['nombre'].tolist())
+                    med_id = medicamentos[medicamentos['nombre'] == med]['id'].values[0]
+                    numero_lote = st.text_input("Número de Lote *")
+                    fecha_vencimiento = st.date_input("Fecha de Vencimiento", min_value=datetime.now())
+                with col2:
+                    cantidad = st.number_input("Cantidad", min_value=1, step=1)
+                    motivo = st.text_area("Motivo del Ingreso")
 
-    if st.form_submit_button("✅ Registrar Ingreso"):
-        if
-    not numero_lote:
-    st.error("El número de lote es obligatorio")
-    else:
-    registrar_ingreso(med_id, numero_lote, fecha_vencimiento, cantidad, motivo, st.session_state['username'])
-    st.success(f"✅ Ingreso registrado: +{cantidad} {med}")
-    st.balloons()
-    st.rerun()
+                if st.form_submit_button("✅ Registrar Ingreso"):
+                    if not numero_lote:
+                        st.error("El número de lote es obligatorio")
+                    else:
+                        registrar_ingreso(med_id, numero_lote, fecha_vencimiento, cantidad, motivo,
+                                          st.session_state['username'])
+                        st.success(f"✅ Ingreso registrado: +{cantidad} {med}")
+                        st.balloons()
+                        st.rerun()
 
+    # ============ EGRESO ============
     elif menu == "📤 Egreso":
-    st.header("📤 Registrar Egreso")
+        st.header("📤 Registrar Egreso")
 
-    if medicamentos.empty:
-        st.warning("No hay medicamentos registrados")
-    else:
-        med = st.selectbox("Medicamento", medicamentos['nombre'].tolist())
-    med_id = medicamentos[medicamentos['nombre'] == med]['id'].values[0]
-    stock_actual = medicamentos[medicamentos['id'] == med_id]['stock'].values[0]
+        if medicamentos.empty:
+            st.warning("No hay medicamentos registrados")
+        else:
+            med = st.selectbox("Medicamento", medicamentos['nombre'].tolist())
+            med_id = medicamentos[medicamentos['nombre'] == med]['id'].values[0]
+            stock_actual = medicamentos[medicamentos['id'] == med_id]['stock'].values[0]
 
-    st.info(f"💊 Stock disponible: **{stock_actual}** unidades")
+            st.info(f"💊 Stock disponible: **{stock_actual}** unidades")
 
-    cantidad = st.number_input("Cantidad a egresar", min_value=1,
-                               max_value=stock_actual if stock_actual > 0 else 1, step=1)
-    motivo = st.text_area("Motivo del Egreso")
+            cantidad = st.number_input("Cantidad a egresar", min_value=1,
+                                       max_value=stock_actual if stock_actual > 0 else 1, step=1)
+            motivo = st.text_area("Motivo del Egreso")
 
-    if st.button("✅ Confirmar Egreso", type="primary"):
-        exito, mensaje = registrar_egreso(med_id, cantidad, motivo, st.session_state['username'])
-    if exito:
-        st.success(f"✅ {mensaje}: -{cantidad} {med}")
-    st.rerun()
-    else:
-    st.error(f"❌ {mensaje}")
+            if st.button("✅ Confirmar Egreso", type="primary"):
+                exito, mensaje = registrar_egreso(med_id, cantidad, motivo, st.session_state['username'])
+                if exito:
+                    st.success(f"✅ {mensaje}: -{cantidad} {med}")
+                    st.rerun()
+                else:
+                    st.error(f"❌ {mensaje}")
 
+    # ============ CARRO DE PARO ============
     elif menu == "🚑 Carro de Paro":
-    st.header("🚑 Gestión del Carro de Paro")
+        st.header("🚑 Gestión del Carro de Paro")
 
-    carro = obtener_carro_paro()
-    if carro.empty:
-        st.info("No hay medicamentos en el carro de paro")
-    else:
-        for
-    _, row in carro.iterrows():
-    if row['cantidad'] <= row['cantidad_minima']:
-        st.warning(f"⚠️ **{row['nombre']}** - Stock: {row['cantidad']} (Mínimo: {row['cantidad_minima']})")
+        carro = obtener_carro_paro()
+        if carro.empty:
+            st.info("No hay medicamentos en el carro de paro")
+        else:
+            for _, row in carro.iterrows():
+                if row['cantidad'] <= row['cantidad_minima']:
+                    st.warning(f"⚠️ **{row['nombre']}** - Stock: {row['cantidad']} (Mínimo: {row['cantidad_minima']})")
 
-    st.dataframe(carro, use_container_width=True)
+            st.dataframe(carro, use_container_width=True)
 
-    if st.button("📝 Marcar revisión realizada"):
-        conn = get_connection()
-    conn.execute("UPDATE carro_paro SET ultima_revision = ?", (datetime.now().strftime('%Y-%m-%d'),))
-    conn.commit()
-    conn.close()
-    st.success("✅ Revisión registrada")
-    st.rerun()
+            if st.button("📝 Marcar revisión realizada"):
+                conn = get_connection()
+                conn.execute("UPDATE carro_paro SET ultima_revision = ?", (datetime.now().strftime('%Y-%m-%d'),))
+                conn.commit()
+                conn.close()
+                st.success("✅ Revisión registrada")
+                st.rerun()
 
+    # ============ LOTES Y VENCIMIENTOS ============
     elif menu == "📦 Lotes y Vencimientos":
-    st.header("📦 Control de Lotes y Vencimientos")
+        st.header("📦 Control de Lotes y Vencimientos")
 
-    if lotes_vencer.empty:
-        st.success("✅ No hay lotes próximos a vencer en los próximos 30 días")
-    else:
-        st.warning(f"⚠️ {len(lotes_vencer)} lotes próximos a vencer")
-    st.dataframe(lotes_vencer, use_container_width=True)
+        if lotes_vencer.empty:
+            st.success("✅ No hay lotes próximos a vencer en los próximos 30 días")
+        else:
+            st.warning(f"⚠️ {len(lotes_vencer)} lotes próximos a vencer")
+            st.dataframe(lotes_vencer, use_container_width=True)
 
-    st.markdown("---")
+        st.markdown("---")
 
-    with st.expander("📋 Ver todos los lotes"):
-        conn = get_connection()
-    try:
-        todos_lotes = pd.read_sql_query('''
+        with st.expander("📋 Ver todos los lotes"):
+            conn = get_connection()
+            try:
+                todos_lotes = pd.read_sql_query('''
                     SELECT m.nombre, m.categoria, l.numero_lote, l.fecha_vencimiento, 
                            l.cantidad, l.cantidad_restante, l.fecha_ingreso
                     FROM lotes l
                     JOIN medicamentos m ON l.medicamento_id = m.id
                     ORDER BY l.fecha_vencimiento ASC
                 ''', conn)
-        st.dataframe(todos_lotes, use_container_width=True)
-    except:
-        st.info("No hay lotes registrados")
-    conn.close()
+                st.dataframe(todos_lotes, use_container_width=True)
+            except:
+                st.info("No hay lotes registrados")
+            conn.close()
 
+    # ============ REPORTES ============
     elif menu == "📈 Reportes":
-    st.header("📈 Generación de Reportes")
+        st.header("📈 Generación de Reportes")
 
-    if st.button("📄 Generar Reporte de Stock (PDF)", type="primary"):
-        with st.spinner("Generando reporte..."):
-            pdf = generar_reporte_pdf()
-            st.download_button(
-                label="📥 Descargar PDF",
-                data=pdf,
-                file_name=f"reporte_stock_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                mime="application/pdf"
-            )
+        if st.button("📄 Generar Reporte de Stock (PDF)", type="primary"):
+            with st.spinner("Generando reporte..."):
+                pdf = generar_reporte_pdf()
+                st.download_button(
+                    label="📥 Descargar PDF",
+                    data=pdf,
+                    file_name=f"reporte_stock_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    mime="application/pdf"
+                )
 
-    st.subheader("📜 Últimos movimientos")
-    conn = get_connection()
-    try:
-        movimientos = pd.read_sql_query('''
+        st.subheader("📜 Últimos movimientos")
+        conn = get_connection()
+        try:
+            movimientos = pd.read_sql_query('''
                 SELECT datetime(fecha, 'localtime') as fecha, m2.nombre, tipo, cantidad, motivo, usuario
                 FROM movimientos m
                 JOIN medicamentos m2 ON m.medicamento_id = m2.id
                 ORDER BY m.fecha DESC
                 LIMIT 50
             ''', conn)
-        if not movimientos.empty:
-            st.dataframe(movimientos, use_container_width=True)
-        else:
-            st.info("No hay movimientos registrados")
-    except:
-        st.info("No hay movimientos registrados")
-    conn.close()
-
-elif menu == "📥 Cargar lista predeterminada":
-st.header("📥 Cargar lista predeterminada de medicamentos")
-
-st.info("📌 Esta opción carga una lista de medicamentos comunes directamente en la base de datos.")
-
-conn = get_connection()
-cursor = conn.cursor()
-cursor.execute("SELECT COUNT(*) FROM medicamentos")
-total_actual = cursor.fetchone()[0]
-conn.close()
-
-st.write(f"📊 Actualmente hay **{total_actual}** medicamentos en la base de datos.")
-
-if st.button("📥 Cargar lista predeterminada", type="primary"):
-    with st.spinner("Cargando medicamentos..."):
-        try:
-            contador = cargar_lista_predeterminada()
-            st.success(f"✅ {contador} medicamentos cargados correctamente")
-            st.balloons()
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Error al cargar los medicamentos: {e}")
-
-elif menu == "🔐 Cambiar Contraseña":
-    st.header("🔐 Cambiar Contraseña")
-
-with st.form("cambiar_password"):
-    password_actual = st.text_input("Contraseña actual", type="password")
-    password_nueva = st.text_input("Contraseña nueva", type="password")
-    password_confirmar = st.text_input("Confirmar contraseña nueva", type="password")
-
-    if st.form_submit_button("Cambiar contraseña", type="primary"):
-        if not password_actual or not password_nueva:
-            st.warning("Complete todos los campos")
-        elif password_nueva != password_confirmar:
-            st.error("❌ Las contraseñas nuevas no coinciden")
-        elif len(password_nueva) < 4:
-            st.error("❌ La contraseña debe tener al menos 4 caracteres")
-        else:
-            if cambiar_password(st.session_state['username'], password_actual, password_nueva):
-                st.success("✅ Contraseña cambiada exitosamente")
-                st.info("Vuelve a iniciar sesión con tu nueva contraseña")
-                if st.button("Cerrar sesión ahora"):
-                    for key in list(st.session_state.keys()):
-                        del st.session_state[key]
-                    st.rerun()
+            if not movimientos.empty:
+                st.dataframe(movimientos, use_container_width=True)
             else:
-                st.error("❌ Contraseña actual incorrecta")
+                st.info("No hay movimientos registrados")
+        except:
+            st.info("No hay movimientos registrados")
+        conn.close()
 
-elif menu == "👥 Gestión de Usuarios":
-if verificar_permiso('admin'):
-    gestionar_usuarios()
-else:
-    st.error("❌ No tienes permiso para acceder a esta sección")
+    # ============ CARGAR LISTA PREDETERMINADA ============
+    elif menu == "📥 Cargar lista predeterminada":
+        st.header("📥 Cargar lista predeterminada de medicamentos")
+
+        st.info("📌 Esta opción carga una lista de medicamentos comunes directamente en la base de datos.")
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM medicamentos")
+        total_actual = cursor.fetchone()[0]
+        conn.close()
+
+        st.write(f"📊 Actualmente hay **{total_actual}** medicamentos en la base de datos.")
+
+        if st.button("📥 Cargar lista predeterminada", type="primary"):
+            with st.spinner("Cargando medicamentos..."):
+                try:
+                    contador = cargar_lista_predeterminada()
+                    st.success(f"✅ {contador} medicamentos cargados correctamente")
+                    st.balloons()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error al cargar los medicamentos: {e}")
+
+    # ============ CAMBIAR CONTRASEÑA ============
+    elif menu == "🔐 Cambiar Contraseña":
+        st.header("🔐 Cambiar Contraseña")
+
+        with st.form("cambiar_password"):
+            password_actual = st.text_input("Contraseña actual", type="password")
+            password_nueva = st.text_input("Contraseña nueva", type="password")
+            password_confirmar = st.text_input("Confirmar contraseña nueva", type="password")
+
+            if st.form_submit_button("Cambiar contraseña", type="primary"):
+                if not password_actual or not password_nueva:
+                    st.warning("Complete todos los campos")
+                elif password_nueva != password_confirmar:
+                    st.error("❌ Las contraseñas nuevas no coinciden")
+                elif len(password_nueva) < 4:
+                    st.error("❌ La contraseña debe tener al menos 4 caracteres")
+                else:
+                    if cambiar_password(st.session_state['username'], password_actual, password_nueva):
+                        st.success("✅ Contraseña cambiada exitosamente")
+                        st.info("Vuelve a iniciar sesión con tu nueva contraseña")
+                        if st.button("Cerrar sesión ahora"):
+                            for key in list(st.session_state.keys()):
+                                del st.session_state[key]
+                            st.rerun()
+                    else:
+                        st.error("❌ Contraseña actual incorrecta")
+
+    # ============ GESTIÓN DE USUARIOS ============
+    elif menu == "👥 Gestión de Usuarios":
+        if verificar_permiso('admin'):
+            gestionar_usuarios()
+        else:
+            st.error("❌ No tienes permiso para acceder a esta sección")
 
 
 if __name__ == "__main__":
