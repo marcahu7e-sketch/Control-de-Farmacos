@@ -466,6 +466,69 @@ def obtener_stock_bajo():
     return df
 
 
+# ============ FUNCIONES PARA CARGAR LISTA PREDETERMINADA ============
+def cargar_lista_predeterminada():
+    """Carga una lista de medicamentos predeterminados en la base de datos"""
+    medicamentos = [
+        ("GENTAMICINA 80 MG", "farmaco", 50, 10),
+        ("GLUCONATO DE CALCIO AMP", "farmaco", 30, 10),
+        ("HEPARINA AMP 5 ML", "farmaco", 40, 10),
+        ("HIDROCORTISONA 100 MG AMP", "farmaco", 30, 10),
+        ("HIDROCORTISONA 500 MG AMP", "farmaco", 30, 10),
+        ("HIERRO AMP", "farmaco", 30, 10),
+        ("HOSCINA COMP AMP", "farmaco", 30, 10),
+        ("HOSCINA SIMPLE AMP", "farmaco", 30, 10),
+        ("MIPENEM FCO AMP", "farmaco", 20, 5),
+        ("KETOROLAC AMP", "farmaco", 30, 10),
+        ("LABETALOL AMP", "farmaco", 30, 10),
+        ("LEVETIRACETAM AMP", "psicofarmaco", 30, 10),
+        ("MEROPENEM 1 gr", "farmaco", 20, 5),
+        ("MEROPENEM 500 AMP", "farmaco", 20, 5),
+        ("METOCLOPRAMIDA AMP", "farmaco", 30, 10),
+        ("METRONIDAZOL SACHET", "farmaco", 30, 10),
+        ("OMEPRAZOL AMP", "farmaco", 40, 10),
+        ("ONDASENTRON AMP", "farmaco", 30, 10),
+        ("PIPERACILINA + TAZOBACTAN AMP", "farmaco", 20, 5),
+        ("RANITIDINA AMP", "farmaco", 30, 10),
+        ("SN HIPERTONICA AMP", "farmaco", 30, 10),
+        ("SOLUCION GLUCOSADA", "farmaco", 50, 10),
+        ("SULFAMETOXAZOL + TRIMETOPRIMA AMP", "farmaco", 30, 10),
+        ("SULFATO DE MAGNESIO AMP", "farmaco", 30, 10),
+        ("VANCOMICINA 1G MG FCO", "farmaco", 20, 5),
+        ("VANCOMICINA 500 MG FCO", "farmaco", 20, 5),
+        ("VIT K 10", "farmaco", 30, 10),
+        ("AMODINAMIDA AMP", "farmaco", 30, 10),
+        ("BISPROPOLIOPROPANOLOL", "farmaco", 30, 10),
+        ("DEXAMETHAMINAMIDA AMP", "farmaco", 30, 10),
+        ("DIOXYKINA MAMP", "farmaco", 30, 10),
+        ("ETILFERAMIDA AMP", "farmaco", 30, 10),
+        ("FURONATIO DE CALCIO AMP", "farmaco", 30, 10),
+        ("GLUCONATO HIPERTONICO", "farmaco", 30, 10),
+        ("ISOSORBIDE SUBL COMP", "farmaco", 30, 10),
+        ("LIDOCAINA AMP", "farmaco", 40, 10),
+    ]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    contador = 0
+
+    for nombre, categoria, stock, stock_minimo in medicamentos:
+        cursor.execute("SELECT id FROM medicamentos WHERE nombre = ?", (nombre,))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO medicamentos (nombre, categoria, stock, stock_minimo) VALUES (?, ?, ?, ?)",
+                (nombre, categoria, stock, stock_minimo)
+            )
+            med_id = cursor.lastrowid
+            cursor.execute(
+                "INSERT OR IGNORE INTO carro_paro (medicamento_id, cantidad, cantidad_minima) VALUES (?, 0, 5)",
+                (med_id,))
+            contador += 1
+
+    conn.commit()
+    conn.close()
+    return contador
+
 # ============ FUNCIONES DE LOTES ============
 def registrar_ingreso(medicamento_id, numero_lote, fecha_vencimiento, cantidad, motivo, usuario):
     conn = get_connection()
@@ -874,6 +937,30 @@ def main():
         except:
             st.info("No hay movimientos registrados")
         conn.close()
+        # ============ CARGAR LISTA PREDETERMINADA ============
+        elif menu == "📥 Cargar lista predeterminada":
+        st.header("📥 Cargar lista predeterminada de medicamentos")
+
+        st.info("📌 Esta opción carga una lista de medicamentos comunes directamente en la base de datos.")
+
+        # Mostrar cuántos medicamentos hay actualmente
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM medicamentos")
+        total_actual = cursor.fetchone()[0]
+        conn.close()
+
+        st.write(f"📊 Actualmente hay **{total_actual}** medicamentos en la base de datos.")
+
+        if st.button("📥 Cargar lista predeterminada", type="primary"):
+            with st.spinner("Cargando medicamentos..."):
+                try:
+                    contador = cargar_lista_predeterminada()
+                    st.success(f"✅ {contador} medicamentos cargados correctamente")
+                    st.balloons()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error al cargar los medicamentos: {e}")
 
     # Cambiar Contraseña
     elif menu == "🔐 Cambiar Contraseña":
